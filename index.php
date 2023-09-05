@@ -20,10 +20,21 @@ function newchatmember($from,$to){
     {
         $captcha_text.=$characters[rand(0,count($characters)-1)];
     }
+    // captcha generator
+	$captcha_image=imagecreatetruecolor(200,200);
+	$captcha_background=imagecolorallocate($captcha_image,0,0,0);//setting captcha background colour
+	$captcha_text_colour=imagecolorallocate($captcha_image,255,255,255);//setting cpatcha text colour
+	imagefilledrectangle($captcha_image,0,0,120,29,$captcha_background);//creating the rectangle
+	$font='arial.ttf';//setting the font path
+	imagettftext($captcha_image,20,0,50,100,$captcha_text_colour,$font,$captcha_text);
+	imagepng($captcha_image,__DIR__ . '/captcha/'.$captcha_text.'.png');
+
 	$result = Request::sendPhoto([
 	    'chat_id' => $to,
-	    'photo'   => Request::encodeFile('http://localhost/bogdan/antispam1/captcha.php?captcha='.$captcha_text),
+	    'photo'   => Request::encodeFile(__DIR__ . '/captcha/'.$captcha_text.'.png'),
 	]);
+    // end captcha generator
+    
 	$msg_id = $result->getResult()->getMessageId();
     $ban_user = array();
     $ban_user['id'] = $to;
@@ -49,6 +60,7 @@ function check($from,$text,$msges_id){
 	                'chat_id'    => $msg_gen['channel'],
 	                'message_id' => $msg_gen['id'],
 	            ]);
+	            unlink(__DIR__ . '/captcha/'.$msg_gen['text'].'.png');
 				delete($msg_gen['channel'],$msges_id);
 	        }
 	    }
@@ -160,6 +172,7 @@ while (true) {
 						'chat_id'=>$ban['id'],
 						'user_id'=>$ban['user_id']
 					]);
+	            	unlink(__DIR__ . '/captcha/'.$ban['text'].'.png');
 		        }
 			}
 		    foreach ($messages_id as $msg_gen) {
