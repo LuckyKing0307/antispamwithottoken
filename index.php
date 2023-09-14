@@ -87,7 +87,6 @@ while (true) {
 	    			$type = $result->getUpdateContent()->getType();
 	    			$from = $result->getUpdateContent()->getFrom()->getId();
 	    			$chat = $result->getUpdateContent()->getChat()->getId();
-	    			var_dump($type);
 	    			if ($type=='new_chat_members') {
 						newchatmember($from,$chat);
 	    			}
@@ -100,7 +99,10 @@ while (true) {
 	    				$perm = false;
 	    				$text = $result->getUpdateContent()->getText();
     					$reply = $result->getUpdateContent()->getReplyToMessage();
-    					$ban_user_id = $reply->getFrom()->getId();
+    					$ban_user_id=null;
+    					if ($reply) {
+    						$ban_user_id = $reply->getFrom()->getId();
+    					}
 						$response =	Request::getChatAdministrators([
 							'chat_id'=>$chat
 						]);
@@ -109,20 +111,20 @@ while (true) {
 								$perm=true;
 							}
 						}
-	    				if ($text=='/unban' and $perm) {
+	    				if ($text=='/unban' and $perm and $ban_user_id) {
 							$response =	Request::unbanChatMember([
 								'chat_id'=>$chat,
 								'user_id'=>$ban_user_id
 							]);
 							$perm=false;
 	    				}
-	    				if ($text=='/ban' and $perm) {
+	    				if ($text=='/ban' and $perm and $ban_user_id) {
 							$response =	Request::kickChatMember([
 								'chat_id'=>$chat,
 								'user_id'=>$ban_user_id
 							]);
 							$perm=false;
-	    				}if (strpos($text, '/mute')===0 and $perm) {
+	    				}if (strpos($text, '/mute')===0 and $perm and $ban_user_id) {
 				            $timed= explode(' ', $text);
 				            $type = 'h';
 				            $time_count = $timed[1];
