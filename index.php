@@ -86,13 +86,16 @@ while (true) {
 	    		foreach ($server_response->getResult() as $result) {
 	    			$type = $result->getUpdateContent()->getType();
 	    			$from = $result->getUpdateContent()->getFrom()->getId();
+	    			$bot = $result->getUpdateContent()->getFrom()->getIsBot();
 	    			$chat = $result->getUpdateContent()->getChat()->getId();
+	    			$chat_type = $result->getUpdateContent()->getSenderChat()->getId();
+	    			//supergroup
+	    			//group
 	    			if ($type=='new_chat_members') {
 						newchatmember($from,$chat);
 	    			}
 
 	    			if ($type=='left_chat_member') {
-	    				var_dump($result->getUpdateContent()->getMessageId());
 		            	delete($chat,$result->getUpdateContent()->getMessageId());
 	    			}
 	    			if ($type=='command') {
@@ -107,28 +110,31 @@ while (true) {
 							'chat_id'=>$chat
 						]);
 						foreach ($response->getResult() as $admin) {
+							var_dump($admin->getUser()->getId());
+							var_dump($from);
 							if ($admin->getUser()->getId()==$from) {
 								$perm=true;
 							}
 						}
-	    				if ($text=='/unban' and $perm and $ban_user_id) {
+	    				if (($text=='/unban' and $perm and $ban_user_id) or ($chat_type==$chat)) {
 							$response =	Request::unbanChatMember([
 								'chat_id'=>$chat,
 								'user_id'=>$ban_user_id
 							]);
 							$perm=false;
 	    				}
-	    				if ($text=='/ban' and $perm and $ban_user_id) {
+	    				if (($text=='/ban' and $perm and $ban_user_id) or ($chat_type==$chat)) {
 							$response =	Request::kickChatMember([
 								'chat_id'=>$chat,
 								'user_id'=>$ban_user_id
 							]);
 							$perm=false;
-	    				}if (strpos($text, '/mute')===0 and $perm and $ban_user_id) {
+	    				}if ((strpos($text, '/mute')===0 and $perm and $ban_user_id) or (strpos($text, '/mute')===0 and $chat_type==$chat)) {
 				            $timed= explode(' ', $text);
 				            $type = 'h';
 				            $time_count = $timed[1];
 							$perm=false;
+							var_dump($type);
 				            if (count($timed)>2) {
 				                $type = $timed[2];
 				            }
@@ -167,7 +173,6 @@ while (true) {
 	    			}
 	    		}
 	    	}
-	    	var_dump($messages_id);
 			foreach ($array_bans as $ban) {
 		        if ((time()-$ban['time'])>=60) {
 					$response =	Request::kickChatMember([
